@@ -1,23 +1,23 @@
-require('dotenv')
-const iex = require( 'iexcloud_api_wrapper' ) // gets auth from .env automatically
+require('dotenv');
+const iex = require('iexcloud_api_wrapper'); // gets auth from .env automatically
 const sgMail = require('@sendgrid/mail');
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 const getMoverData = async() => {
   try {
-    const gainers = await iex.list('gainers')
-    const losers = await iex.list('losers')
-    return { gainers, losers }
+    const gainers = await iex.list('gainers');
+    const losers = await iex.list('losers');
+    return { gainers, losers };
   }
   catch(error) {
-    console.error(`Could not get data: ${error}`)
-    process.exit(-1)  // nonzero exit code indicates failure
+    console.error(`Could not get data: ${error}`);
+    process.exit(-1);  // nonzero exit code indicates failure
   }
 }
 
 const generateTable = (stockData) => {
   stockData = stockData.sort((a, b) => 
-    Math.abs(a.changePercent) < Math.abs(b.changePercent))
+    Math.abs(a.changePercent) < Math.abs(b.changePercent));
   const rows = stockData.map(data => 
     `<tr>
       <td>${Math.round(data.changePercent * 10000) / 100}</td>
@@ -27,7 +27,7 @@ const generateTable = (stockData) => {
       <td>${data.previousClose}</td>
       <td>${Math.round(data.ytdChange * 100) / 100}</td>
     </tr>`
-  ).join('\n')
+  ).join('\n');
   return `
     <table>
       <thead>
@@ -44,12 +44,12 @@ const generateTable = (stockData) => {
         ${rows}
       </tbody>
     </table>
-  `
+  `;
 }
 
-const generateHtmlMail = (gainers, losers) => {
-  const gainerTable = generateTable(gainers)
-  const loserTable = generateTable(losers)
+const generateHtmlContents = (gainers, losers) => {
+  const gainerTable = generateTable(gainers);
+  const loserTable = generateTable(losers);
   return `<html>
     <head>
       <style>
@@ -67,7 +67,7 @@ const generateHtmlMail = (gainers, losers) => {
       <h2>Losers</h2>
       <div>${loserTable}</div>
     </body>
-  </html>`
+  </html>`;
 }
 
 const sendEmail = async (htmlEmailContents) => {
@@ -76,20 +76,22 @@ const sendEmail = async (htmlEmailContents) => {
     from: process.env.EMAIL,
     subject: 'Today\'s biggest stock market movers',
     html: htmlEmailContents,
-  }
+  };
   try {
-    await sgMail.send(msg)
+    await sgMail.send(msg);
   }
   catch (error) {
-    console.error(`Could not send message: ${error}`)
+    console.error(`Could not send message: ${error}`);
   }
 }
 
 const sendMoverEmail = async () => {
-  const { gainers, losers } = await getMoverData()
-  const htmlMail = generateHtmlMail(gainers, losers)
-  await sendEmail(htmlMail)
+  const { gainers, losers } = await getMoverData();
+  const htmlEmailContents = generateHtmlContents(gainers, losers);
+  await sendEmail(htmlEmailContents);
 }
 
 sendMoverEmail()
-  .catch(error => console.error(error))
+.then(() => console.log(`Sent stock mover email to ${process.env.EMAIL}!`))
+.catch(error => console.error(error));
+
