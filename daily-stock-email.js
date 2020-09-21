@@ -85,13 +85,13 @@ const sendEmail = async (htmlEmailContents) => {
   }
 }
 
-const sendMoverEmail = async () => {
+const getStockDataAndSendEmail = async () => {
   const { gainers, losers } = await getMoverData();
   const htmlEmailContents = generateHtmlContents(gainers, losers);
   await sendEmail(htmlEmailContents);
 }
 
-sendMoverEmail()
-.then(() => console.log(`Sent stock mover email to ${process.env.EMAIL}!`))
-.catch(error => console.error(error));
+getStockDataAndSendEmail()
+  .then(() => console.log(`Sent stock mover email to ${process.env.EMAIL}!`))
+  .catch(error => console.error(error));
 
